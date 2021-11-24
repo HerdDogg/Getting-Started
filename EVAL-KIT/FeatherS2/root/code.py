@@ -61,6 +61,12 @@ tcplistener = None
 tcpconn = None
 pool = None
 
+udpLine = bytearray(30)
+udpPtr = 0
+UDPPORT = 5280
+udplistener = None
+udpconn = None
+
 HTTPHOST = None
 HTTPPORT = 80
 web_app = None
@@ -482,6 +488,53 @@ def tcpPoll():
     except Exception as e:
       pass
 
+def udpInit():
+  if config['wifi'] == 'disabled':
+    return
+  if wifi.radio.ipv4_address_ap is None and wifi.radio.ipv4_address is None:
+    return
+  global udplistener
+  print("Create UDP Server socket", (TCPHOST, UDPPORT))
+  udplistener = pool.socket(pool.AF_INET, pool.SOCK_DGRAM)
+  udplistener.settimeout(0)
+  udplistener.setblocking(False)
+  udplistener.bind((TCPHOST, UDPPORT))
+  print("Listening")
+
+
+def udpPoll():
+  if config['wifi'] == 'disabled' or (wifi.radio.ipv4_address_ap is None and wifi.radio.ipv4_address is None):
+    return
+  global udplistener, udpPtr
+  buf = bytearray(MAXBUF)
+  try:
+    size, addr = udplistener.recvfrom_into(buf)
+    if size == 0:
+      pass
+    else:
+      print("Received", buf[:size], size, "bytes")
+      for i in range(size):
+        if buf[i] == 0x0A:#newline
+          if udpLine[0] == 0x40:#@
+            command = udpLine[:udpPtr].decode()
+            params = command.split(' ')
+            if params[0] == '@reset':
+              udplistener.sendto("Resetting...", addr)
+              microcontroller.reset()
+            elif params[0] == '@help':
+              udplistener.send("@reset\nRestart the feather.")
+            else:
+              udplistener.send("Invalid command. Type @help for help.")
+            print("", end='')
+          udpPtr = 0
+        elif buf[i] == 0x08 and udpPtr != 0:
+          udpPtr = udpPtr - 1
+        elif buf[i] >= 0x20 and buf[i] <= 0x7f and udpPtr < len(udpLine):
+          udpLine[udpPtr] = buf[i]
+          udpPtr = udpPtr + 1
+  except Exception as e:
+    pass
+
 
 def serialInit():
   print("", end='')
@@ -798,6 +851,7 @@ serialInit()
 tileInit()
 wifiInit()
 tcpInit()
+udpInit()
 httpInit()
 gpsInit()
 
@@ -808,6 +862,7 @@ try:
     gpspoll()
     serialPoll()
     tcpPoll()
+    udpPoll()
     httppoll()
     buttonPoll()
     w.feed()
