@@ -207,6 +207,12 @@ def wifiInit():
   except:
     displayLine(0, "Can't Connect")
 
+def wifiReset():
+    if config['mode'] != 'sta':
+        wifi.radio.stop_ap()
+    wifi.radio.enabled = False
+    wifi.radio.enabled = True
+    wifiInit()
 
 def tileCheck(line):
   global tileTimeout
