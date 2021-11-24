@@ -406,6 +406,7 @@ def tcpPoll():
         tcpconn.close()
         tcpconn = None
         print("Accepting connections")
+        wifiReset()
         TCPSTATE = TCPSTATE_LISTENING
       else:
         print("Received", buf[:size], size, "bytes")
