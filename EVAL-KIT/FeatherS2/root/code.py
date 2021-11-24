@@ -49,6 +49,7 @@ tcpLine = bytearray(800)
 tcpPtr = 0
 i2c = None
 
+TCP_CONNECTION_TIMEOUT = 120 #seconds
 TCPHOST = ""
 TCPPORT = 23
 TIMEOUT = None
@@ -57,6 +58,7 @@ MAXBUF = 256
 TCPSTATE_LISTENING = 1
 TCPSTATE_CONNECTED = 2
 TCPSTATE = TCPSTATE_LISTENING
+tcp_connected_at = 0
 tcplistener = None
 tcpconn = None
 pool = None
@@ -384,13 +386,14 @@ def tcpInit():
 def tcpPoll():
   if config['wifi'] == 'disabled' or (wifi.radio.ipv4_address_ap is None and wifi.radio.ipv4_address is None):
     return
-  global TCPSTATE, tcplistener, tcpconn, tcpPtr
+  global TCPSTATE, tcplistener, tcpconn, tcpPtr, tcp_connected_at
   if TCPSTATE == TCPSTATE_LISTENING:
     try:
       tcpconn, addr = tcplistener.accept()
       tcpconn.settimeout(0)
       print("Accepted from", addr)
       TCPSTATE = TCPSTATE_CONNECTED
+      tcp_connected_at = time.monotonic()
     except:
       pass
   elif TCPSTATE == TCPSTATE_CONNECTED:
@@ -487,6 +490,15 @@ def tcpPoll():
             tcpPtr = tcpPtr + 1
     except Exception as e:
       pass
+    now = time.monotonic()
+
+    if now - tcp_connected_at > TCP_CONNECTION_TIMEOUT:
+        print("Connection timed out after {}s".format(TCP_CONNECTION_TIMEOUT))
+        tcpconn.close()
+        tcpconn = None
+        print("Accepting connections")
+        wifiReset()
+        TCPSTATE = TCPSTATE_LISTENING
 
 
 def serialInit():
