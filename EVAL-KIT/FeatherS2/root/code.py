@@ -49,6 +49,7 @@ tcpLine = bytearray(800)
 tcpPtr = 0
 i2c = None
 
+TCP_CONNECTION_TIMEOUT = 120 #seconds
 TCPHOST = ""
 TCPPORT = 23
 TIMEOUT = None
@@ -57,6 +58,7 @@ MAXBUF = 256
 TCPSTATE_LISTENING = 1
 TCPSTATE_CONNECTED = 2
 TCPSTATE = TCPSTATE_LISTENING
+tcp_connected_at = 0
 tcplistener = None
 tcpconn = None
 pool = None
@@ -213,6 +215,12 @@ def wifiInit():
   except:
     displayLine(0, "Can't Connect")
 
+def wifiReset():
+    if config['mode'] != 'sta':
+        wifi.radio.stop_ap()
+    wifi.radio.enabled = False
+    wifi.radio.enabled = True
+    wifiInit()
 
 def tileCheck(line):
   global tileTimeout
@@ -383,14 +391,17 @@ def tcpInit():
 
 def tcpPoll():
   if config['wifi'] == 'disabled' or (wifi.radio.ipv4_address_ap is None and wifi.radio.ipv4_address is None):
+    displayLine(0, "Wifi Disabled(2)")
+    print("Skipping TCP Poll.   wifi_enabled:{} ipv4_address_ap:{} ipv4_address:{}".format(config['wifi'], wifi.radio.ipv4_address_ap, wifi.radio.ipv4_address))
     return
-  global TCPSTATE, tcplistener, tcpconn, tcpPtr
+  global TCPSTATE, tcplistener, tcpconn, tcpPtr, tcp_connected_at
   if TCPSTATE == TCPSTATE_LISTENING:
     try:
       tcpconn, addr = tcplistener.accept()
       tcpconn.settimeout(0)
       print("Accepted from", addr)
       TCPSTATE = TCPSTATE_CONNECTED
+      tcp_connected_at = time.monotonic()
     except:
       pass
   elif TCPSTATE == TCPSTATE_CONNECTED:
@@ -401,6 +412,7 @@ def tcpPoll():
         tcpconn.close()
         tcpconn = None
         print("Accepting connections")
+        wifiReset()
         TCPSTATE = TCPSTATE_LISTENING
       else:
         print("Received", buf[:size], size, "bytes")
@@ -487,6 +499,15 @@ def tcpPoll():
             tcpPtr = tcpPtr + 1
     except Exception as e:
       pass
+    now = time.monotonic()
+
+    if now - tcp_connected_at > TCP_CONNECTION_TIMEOUT:
+        print("Connection timed out after {}s".format(TCP_CONNECTION_TIMEOUT))
+        tcpconn.close()
+        tcpconn = None
+        print("Accepting connections")
+        wifiReset()
+        TCPSTATE = TCPSTATE_LISTENING
 
 def udpInit():
   if config['wifi'] == 'disabled':
