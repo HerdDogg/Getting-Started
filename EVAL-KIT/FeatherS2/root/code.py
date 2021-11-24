@@ -385,6 +385,8 @@ def tcpInit():
 
 def tcpPoll():
   if config['wifi'] == 'disabled' or (wifi.radio.ipv4_address_ap is None and wifi.radio.ipv4_address is None):
+    displayLine(0, "Wifi Disabled(2)")
+    print("Skipping TCP Poll.   wifi_enabled:{} ipv4_address_ap:{} ipv4_address:{}".format(config['wifi'], wifi.radio.ipv4_address_ap, wifi.radio.ipv4_address))
     return
   global TCPSTATE, tcplistener, tcpconn, tcpPtr, tcp_connected_at
   if TCPSTATE == TCPSTATE_LISTENING:
