@@ -5,6 +5,9 @@ There is an HTTP server runing on port 80 that will open up a web gui. You can u
 ### TCP Connection
 There is a TCP server running on port 23 (Telnet). This has two uses: direct communication with tile and sending @commands wirelessly.
 
+### UDP Connection
+There is a UDP server running on port 5280. This has only a single use: sending the `@reset` command below.
+
 ### Serial Connection
 Using a wired connection over the USB-C port on the feather you can send the @commands listed below.
 
