@@ -35,6 +35,11 @@ Set the interval for gps location updating. 0 turns gps updating off. Must be wi
 Default: 60
 `@set interval 120`
 
+**@set timeout \<minutes\>**  
+Set the connection timeout for the TCP connection. If the socket is open longer than the timeout, it will be closed and wifi will be reset. 0 disables the connection timeout. Must be within 1 to 60 minutes.
+Default: 0 (disabled)
+`@set timeout 5`
+
 **@show**
 Print the wifi mode, ssid, password, and interval to be committed.  
 `@show`
