@@ -49,7 +49,6 @@ tcpLine = bytearray(800)
 tcpPtr = 0
 i2c = None
 
-TCP_CONNECTION_TIMEOUT = 120 #seconds
 TCPHOST = ""
 TCPPORT = 23
 TIMEOUT = None
@@ -466,6 +465,13 @@ def tcpPoll():
                     writePreferences()
                   else:
                     tcpconn.send("Interval can only be 0 or 15-720 minutes.")
+                if params[1] == 'timeout':
+                  if int(params[2]) == 0 or (int(params[2]) > 0 and int(params[2]) <= 60):
+                    config['timeout'] = int(params[2]) * 60
+                    writePreferences()
+                    tcpconn.send(f"Successfully set connection timeout to {config['interval']/60} minutes.")
+                  else:
+                    tcpconn.send("Timeout can only be 0 (default) or up to 60 minutes.")
               elif params[0] == '@show':
                 if len(params) == 2:
                   if params[1] == 'battery':
@@ -501,8 +507,8 @@ def tcpPoll():
       pass
     now = time.monotonic()
 
-    if now - tcp_connected_at > TCP_CONNECTION_TIMEOUT:
-        print("Connection timed out after {}s".format(TCP_CONNECTION_TIMEOUT))
+    if config['timeout'] != 0 and now - tcp_connected_at > config['timeout']:
+        print("Connection timed out after {}s".format(config['timeout']))
         tcpconn.close()
         tcpconn = None
         print("Accepting connections")
@@ -797,6 +803,8 @@ def readPreferences():
     config['password'] = '12345678'
   if not 'interval' in config:
     config['interval'] = 60
+  if not 'timeout' in config:
+    config['timeout'] = 0
   if not 'wifi' in config:
     config['wifi'] = "enabled"
 
