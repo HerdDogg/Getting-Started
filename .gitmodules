@@ -1,0 +1,3 @@
+[submodule "EVAL-KIT/FeatherS2/circuitpython"]
+	path = EVAL-KIT/FeatherS2/circuitpython
+	url = https://github.com/adafruit/circuitpython.git
