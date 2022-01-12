@@ -469,7 +469,7 @@ def tcpPoll():
                   if int(params[2]) == 0 or (int(params[2]) > 0 and int(params[2]) <= 60):
                     config['timeout'] = int(params[2]) * 60
                     writePreferences()
-                    tcpconn.send(f"Successfully set connection timeout to {config['interval']/60} minutes.")
+                    tcpconn.send(f"Successfully set connection timeout to {config['timeout']/60} minutes.")
                   else:
                     tcpconn.send("Timeout can only be 0 (default) or up to 60 minutes.")
               elif params[0] == '@show':
@@ -900,6 +900,3 @@ except Exception as e:
   print(e)
   print("Resetting...")
   microcontroller.reset()
-
-
-
